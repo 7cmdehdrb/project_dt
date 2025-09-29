@@ -42,76 +42,68 @@ class TestNode(Node):
     def __init__(self):
         super().__init__("mesh_test_node")
 
+        self._planning_scene: PlanningScene = None
         self._get_planning_scene_manager = GetPlanningScene_ServiceManager(node=self)
         self._apply_planning_scene_manager = ApplyPlanningScene_ServiceManager(
             node=self
         )
 
-        self._co: CollisionObject = None
-        self._mesh_sub = self.create_subscription(
-            Mesh,
-            "/ur5e",
+        self._instances = {}
+
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance1",
+            self._mesh_callback,
+            qos_profile_system_default,
+        )
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance2",
+            self._mesh_callback,
+            qos_profile_system_default,
+        )
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance3",
+            self._mesh_callback,
+            qos_profile_system_default,
+        )
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance4",
             self._mesh_callback,
             qos_profile_system_default,
         )
 
-        self._co2: CollisionObject = None
-        self._mesh_sub = self.create_subscription(
-            Mesh,
-            "/ConveyorBelt_LineA1",
-            self._mesh_callback2,
-            qos_profile_system_default,
-        )
-
-    def _mesh_callback(self, msg: Mesh):
-        self.get_logger().info(
-            f"Received mesh with {len(msg.vertices)} vertices and {len(msg.triangles)} triangles."
-        )
+    def _mesh_callback(self, msg: MeshInstance):
+        print(f"Received mesh instance: {msg.id}")
 
         co = CollisionObject()
-        co.id = "test_mesh"
-        co.header.frame_id = "ur5e"
-        co.meshes.append(msg)
-        co.mesh_poses.append(
-            Pose(
-                position=Point(x=0.5, y=0.3, z=0.0),
-                orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
-            )
-        )
+        co.id = msg.id
+        co.header.frame_id = "world"
+        co.meshes.append(msg.mesh)
+        co.mesh_poses.append(msg.poses)
         co.operation = CollisionObject.ADD
 
-        self._co = co
-
-    def _mesh_callback2(self, msg: Mesh):
-        self.get_logger().info(
-            f"Received mesh with {len(msg.vertices)} vertices and {len(msg.triangles)} triangles."
-        )
-
-        co = CollisionObject()
-        co.id = "test_mesh2"
-        co.header.frame_id = "ConveyorBelt_LineA1"
-        co.meshes.append(msg)
-        co.mesh_poses.append(
-            Pose(
-                position=Point(x=0.5, y=0.3, z=0.0),
-                orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
+        if len(msg.mesh.triangles) == 0 or len(msg.mesh.vertices) == 0:
+            self.get_logger().warn(
+                f"Mesh instance {msg.id} has no triangles or vertices. Ignoring."
             )
-        )
-        co.operation = CollisionObject.ADD
+            return None
 
-        self._co2 = co
+        self._instances[msg.id] = co
+        print(f"Total instances: {len(self._instances)}")
 
     def update_planning_scene(self):
+
         self._planning_scene = self._get_planning_scene_manager.run()
 
-        collision_objects = []
-        if self._co is not None:
-            collision_objects.append(self._co)
-        if self._co2 is not None:
-            collision_objects.append(self._co2)
+        if len(self._instances) == 0:
+            self.get_logger().warn("No mesh instances received yet.")
+            return
 
         self._apply_planning_scene_manager.run(
-            collision_objects=collision_objects,
+            collision_objects=list(self._instances.values()),
             scene=self._planning_scene,
         )
 
