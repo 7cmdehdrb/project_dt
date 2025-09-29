@@ -326,3 +326,6 @@ AMENT_IGNORE
 *.webm
 
 # End of https://www.toptal.com/developers/gitignore/api/python,ros,ros2,video,images
+
+
+!src/assets/**
