@@ -431,12 +431,26 @@ def get_mesh(db: og.Database):
 
     # STEP 3-1. For each mesh path, extract and downsample the mesh, get relative world pose
     for path in mesh_paths:
+        path: str
+
+        # 필터링: "roller"가 포함된 메쉬만 처리
+        if "roller" in path.lower():
+            continue
+
+        if "decal" in path.lower():
+            continue
+
+        if "rubber" in path.lower():
+            continue
+
         # STEP 3-2. Append MeshFinder (로컬 메시)
         mesh = MeshFinder(path, downsample_voxel_size=voxel_size, scale=scale)
 
         # STEP 3-3. Compute transform from global to this mesh (4x4 full matrix)
         T_mesh = get_world_matrix_np(path)  # 4x4 (float64)
         T_rel = T_global_inv @ T_mesh
+
+        # print(f"Mesh: {path}, T:\n{T_mesh}")
 
         mesh_list.append(mesh)
         pose_list.append(T_rel)

@@ -52,18 +52,6 @@ class TestNode(Node):
 
         self.create_subscription(
             MeshInstance,
-            "/mesh_instance1",
-            self._mesh_callback,
-            qos_profile_system_default,
-        )
-        self.create_subscription(
-            MeshInstance,
-            "/mesh_instance2",
-            self._mesh_callback,
-            qos_profile_system_default,
-        )
-        self.create_subscription(
-            MeshInstance,
             "/mesh_instance3",
             self._mesh_callback,
             qos_profile_system_default,
@@ -71,6 +59,18 @@ class TestNode(Node):
         self.create_subscription(
             MeshInstance,
             "/mesh_instance4",
+            self._mesh_callback,
+            qos_profile_system_default,
+        )
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance5",
+            self._mesh_callback,
+            qos_profile_system_default,
+        )
+        self.create_subscription(
+            MeshInstance,
+            "/mesh_instance6",
             self._mesh_callback,
             qos_profile_system_default,
         )
